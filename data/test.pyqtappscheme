@@ -1,0 +1,20 @@
+{
+    "appname"   : "",
+    "hasmenu"   : 1,
+    "menus"     : {
+        "menu0" : {
+            "menuname" : "Fichier",
+            "entries" : {
+                "entry0" : "Nouveau fichier",
+                "entry1" : "Ouvrir un Fichier"
+            }
+        },
+        "menu1" : {
+            "menuname" : "Edition",
+            "entries" : {
+                "entry0" : "Copier",
+                "entry1" : "Coller"
+            }
+        }
+    }
+}
