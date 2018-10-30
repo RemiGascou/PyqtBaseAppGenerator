@@ -109,11 +109,13 @@ class PyqtBaseAppGenerator(object):
     """docstring for PyqtBaseAppGenerator."""
     def __init__(self, appinfos:AppInfos):
         super(PyqtBaseAppGenerator, self).__init__()
-        self.appinfos = appinfos
-        self.path = ""
+        self.appinfos   = appinfos
+        self.path       = ""
+        self.verbose    = False
 
-    def createProject(self, path=""):
-        self.path = path
+    def createProject(self, path, verbose=False):
+        self.path       = path
+        self.verbose    = verbose
         if not os.path.exists(self.path + self.appinfos.get_appname()):
             self.path = self.path + self.appinfos.get_appname()
             os.mkdir(self.path)
@@ -125,7 +127,7 @@ class PyqtBaseAppGenerator(object):
 
         os.mkdir(self.path + "/lib")
         f = open(self.path + "/lib/" + "__init__.py", 'w')
-        f.write("""# -*- coding: utf-8 -*-\n\nfrom lib."""+ self.appinfos.get_mainappname()+""" import *\nfrom lib.ui import *\nfrom lib.core import *\n""")
+        f.write("""# -*- coding: utf-8 -*-\n\nfrom lib."""+ self.appinfos.get_mainappname() + """ import *\nfrom lib.ui import *\nfrom lib.core import *\n""")
         f.close()
 
         os.mkdir(self.path + "/lib" + "/meta")
@@ -169,6 +171,9 @@ class PyqtBaseAppGenerator(object):
         f.close()
 
     def _genAppClass(self):
+        if self.verbose == True:
+            print("Creating" + "/lib/" + self.appinfos.get_mainappname() + ".py")
+
         appclass = self.appinfos.gen_header(self.appinfos.get_mainappname()) + "\n"
 
         _classInit = """class """ + self.appinfos.get_mainappname() + """(QMainWindow):\n\t\"\"\"docstring for """ + self.appinfos.get_mainappname() + """.\"\"\"\n\tdef __init__(self, parent=None):\n\t\tsuper(""" + self.appinfos.get_mainappname() + """, self).__init__()\n\t\tself.title        = """ + self.appinfos.get_mainappname() + """Infos.get_name() + " - " + """ + self.appinfos.get_mainappname() + """Infos.get_version_tag()\n\t\tself.margin_left  = 200\n\t\tself.margin_top   = 200\n\t\tself.width        = 800\n\t\tself.height       = 600\n\t\tself._initUI()\n\n"""
@@ -178,30 +183,32 @@ class PyqtBaseAppGenerator(object):
         _initUI = """\tdef _initUI(self):\n\t\tself.setWindowTitle(self.title)\n\t\t#self.setWindowIcon(QIcon('lib/meta/ico.png'))\n\t\tself.setGeometry(self.margin_left, self.margin_top, self.width, self.height)\n\t\tself.setFixedSize(self.size())\n\t\tself.setAttribute(Qt.WA_DeleteOnClose)\n\t\tself._initMenus()\n\t\tself.show()\n\n"""
         appclass += _initUI
 
-        #_initMenus
-        _initMenus = """\tdef _initMenus(self):\n\t\tmainMenu = self.menuBar()\n"""
-        _windowsHandlers = """# *------------------------------Windows Handlers----------------------------- *\n\n"""
-        for menu in self.appinfos.menus:
-            _initMenus += """\t\tmenu""" + menu[0] + """  = mainMenu.addMenu(\'""" + menu[0] + """\')\n"""
-        for actionbutton in self.appinfos.menus[0][1]:
-            self._genWindow(actionbutton.replace(" ", "").lower())
-            _initMenus += """\t\t""" + actionbutton.replace(" ", "").lower() + """Button = QAction(\'""" + actionbutton + """\', self)\n"""
-            _initMenus += """\t\t""" + actionbutton.replace(" ", "").lower() + """Button.triggered.connect(self.start_""" + actionbutton.replace(" ", "").lower() + """Window)\n"""
-            _initMenus += """\t\tmenu""" + self.appinfos.menus[0][0] + """.addAction(""" + actionbutton.replace(" ", "").lower() + """Button)\n"""
-            _windowsHandlers += """\tdef start_""" + actionbutton.replace(" ", "").lower() + """Window(self):\n\t\tself.w""" + actionbutton.replace(" ", "").lower() + """Window = """ + actionbutton.replace(" ", "").lower() + """Window()\n\t\tself.w""" + actionbutton.replace(" ", "").lower() + """Window.show()\n\n"""
-        _initMenus += """\t\tmenu""" + self.appinfos.menus[0][0] + """.addSeparator()\n\t\texitButton = QAction('Exit', self)\n\t\texitButton.setShortcut('Ctrl+Q')\n\t\texitButton.setStatusTip('Exit application')\n\t\texitButton.triggered.connect(self.close)\n\t\tmenu""" + self.appinfos.menus[0][0] + """.addAction(exitButton)\n\n"""
+        if len (self.appinfos.menus) != 0:
+            #_initMenus
+            _initMenus = """\tdef _initMenus(self):\n\t\tmainMenu = self.menuBar()\n"""
+            _windowsHandlers = """# *------------------------------Windows Handlers----------------------------- *\n\n"""
 
-        for menu in self.appinfos.menus[1:]:
-            for submenu in menu[1]:
-                self._genWindow(submenu.replace(" ", "").lower())
-                _initMenus += """\t\t""" + submenu.replace(" ", "").lower() + """Button = QAction(\'""" + actionbutton + """\', self)\n"""
-                _initMenus += """\t\t""" + submenu.replace(" ", "").lower() + """Button.triggered.connect(self.start_""" + submenu.replace(" ", "").lower() + """Window)\n"""
-                _initMenus += """\t\tmenu""" + menu[0] + """.addAction(""" + submenu.replace(" ", "").lower() + """Button)\n"""
-                _windowsHandlers += """\tdef start_""" + submenu.replace(" ", "").lower() + """Window(self):\n\t\tself.w""" + submenu.replace(" ", "").lower() + """Window = """ + submenu.replace(" ", "").lower() + """Window()\n\t\tself.w""" + submenu.replace(" ", "").lower() + """Window.show()\n\n"""
-            _initMenus += """\n"""
+            for menu in self.appinfos.menus:
+                _initMenus += """\t\tmenu""" + menu[0] + """  = mainMenu.addMenu(\'""" + menu[0] + """\')\n"""
+            for actionbutton in self.appinfos.menus[0][1]:
+                self._genWindow(actionbutton.replace(" ", "").lower())
+                _initMenus += """\t\t""" + actionbutton.replace(" ", "").lower() + """Button = QAction(\'""" + actionbutton + """\', self)\n"""
+                _initMenus += """\t\t""" + actionbutton.replace(" ", "").lower() + """Button.triggered.connect(self.start_""" + actionbutton.replace(" ", "").lower() + """Window)\n"""
+                _initMenus += """\t\tmenu""" + self.appinfos.menus[0][0] + """.addAction(""" + actionbutton.replace(" ", "").lower() + """Button)\n"""
+                _windowsHandlers += """\tdef start_""" + actionbutton.replace(" ", "").lower() + """Window(self):\n\t\tself.w""" + actionbutton.replace(" ", "").lower() + """Window = """ + actionbutton.replace(" ", "").lower() + """Window()\n\t\tself.w""" + actionbutton.replace(" ", "").lower() + """Window.show()\n\n"""
+            _initMenus += """\t\tmenu""" + self.appinfos.menus[0][0] + """.addSeparator()\n\t\texitButton = QAction('Exit', self)\n\t\texitButton.setShortcut('Ctrl+Q')\n\t\texitButton.setStatusTip('Exit application')\n\t\texitButton.triggered.connect(self.close)\n\t\tmenu""" + self.appinfos.menus[0][0] + """.addAction(exitButton)\n\n"""
 
-        appclass += _initMenus
-        appclass += _windowsHandlers
+            for menu in self.appinfos.menus[1:]:
+                for submenu in menu[1]:
+                    self._genWindow(submenu.replace(" ", "").lower())
+                    _initMenus += """\t\t""" + submenu.replace(" ", "").lower() + """Button = QAction(\'""" + actionbutton + """\', self)\n"""
+                    _initMenus += """\t\t""" + submenu.replace(" ", "").lower() + """Button.triggered.connect(self.start_""" + submenu.replace(" ", "").lower() + """Window)\n"""
+                    _initMenus += """\t\tmenu""" + menu[0] + """.addAction(""" + submenu.replace(" ", "").lower() + """Button)\n"""
+                    _windowsHandlers += """\tdef start_""" + submenu.replace(" ", "").lower() + """Window(self):\n\t\tself.w""" + submenu.replace(" ", "").lower() + """Window = """ + submenu.replace(" ", "").lower() + """Window()\n\t\tself.w""" + submenu.replace(" ", "").lower() + """Window.show()\n\n"""
+                _initMenus += """\n"""
+
+            appclass += _initMenus
+            appclass += _windowsHandlers
 
         appclass += """\n\nif __name__ == '__main__':\n\tapp = QApplication(sys.argv)\n\tex = """ + self.appinfos.get_mainappname() + """()\n\tsys.exit(app.exec_())\n"""
 
@@ -211,6 +218,9 @@ class PyqtBaseAppGenerator(object):
 
     def _genWindow(self, windowname):
         if not windowname.endswith("Window"): windowname = windowname + "Window"
+
+        if self.verbose == True: print("Creating" + "/lib/ui/windows/" + windowname + ".py") #verbose
+
         #Append import to __init__
         f = open(self.path + "/lib/ui/windows/" + "__init__.py", 'a')
         f.write("""from lib.ui.windows.""" + windowname + """ import *\n""")
@@ -237,9 +247,11 @@ if __name__ == '__main__':
     else:
         pathtofilename = sys.argv[1]
         pathtoexport   = sys.argv[2]
+        print("\npathtofilename = ",pathtofilename)
+        print("pathtoexport   = ",pathtoexport,"\n")
         if pathtofilename.endswith(ext):
-            a = AppInfos()
+            a = AppInfos(pathtofilename)
             p = PyqtBaseAppGenerator(a)
-            p.createProject(pathtoexport)
+            p.createProject(pathtoexport, verbose=True)
         else :
             print("Unsupported file. Supported files are *" + ext)
