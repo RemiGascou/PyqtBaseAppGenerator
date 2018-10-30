@@ -63,14 +63,14 @@ class PyqtBaseAppGenerator(object):
         self._genAppInfos()
 
     def _genMain(self):
-        mainfile = """# -*- coding: utf-8 -*-\n\nimport os, sys\nfrom lib import """ + self.appinfos.get_appname() + """\n\n"""
+        mainfile = """# -*- coding: utf-8 -*-\n\nimport os, sys\n\nfrom PyQt5.QtWidgets import *\nfrom PyQt5.QtGui import *\nfrom PyQt5.QtCore import *\n\nfrom lib import *\n\n"""
         mainfile += """if __name__ == \"\"\"__main__\"\"\":\n\tapp = QApplication(sys.argv)\n\tex = """ + self.appinfos.get_appname() + """()\n\tsys.exit(app.exec_())\n"""
         f = open(self.path + "/main.py", 'w')
         f.write(mainfile)
         f.close()
 
     def _genAppInfos(self):
-        _fileAppInfos = """# -*- coding: utf-8 -*-\n\ndef get_name():\n\treturn '""" + self.appinfos.get_appname() + """'\n\ndef get_version():\n\treturn "v.0.0.1"\n\ndef get_credits():\n\treturn '© """ + self.appinfos.get_author() + """'"""
+        _fileAppInfos = """# -*- coding: utf-8 -*-\n\ndef get_name():\n\treturn '""" + self.appinfos.get_appname() + """'\n\n\ndef get_version():\n\treturn get_version_name() + " " + get_version_tag()\n\ndef get_version_tag():\n\treturn "v.0.0.1"\n\ndef get_version_name():\n\treturn "Alpha"\n\ndef get_credits():\n\treturn u'\\u00A9' + ' """ + self.appinfos.get_author() + """'"""
         f = open(self.path + "/lib/core/" + self.appinfos.get_mainappname() + "Infos.py", 'w')
         f.write(_fileAppInfos)
         f.close()
@@ -78,11 +78,11 @@ class PyqtBaseAppGenerator(object):
     def _genAppClass(self):
         appclass = self.appinfos.gen_header(self.appinfos.get_mainappname()) + "\n"
 
-        _classInit = """class """ + self.appinfos.get_mainappname() + """(QMainWindow):\n\t\"\"\"docstring for """ + self.appinfos.get_mainappname() + """.\"\"\"\n\tdef __init__(self, parent=None):\n\t\tsuper(""" + self.appinfos.get_mainappname() + """, self).__init__()\n\t\tself.title        = """ + self.appinfos.get_mainappname() + """Infos.get_name() + " - " + """ + self.appinfos.get_mainappname() + """Infos.get_versiontag()\n\t\tself.margin_left  = 200\n\t\tself.margin_top   = 200\n\t\tself.width        = 800\n\t\tself.height       = 600\n\t\tself._initUI()\n\n"""
+        _classInit = """class """ + self.appinfos.get_mainappname() + """(QMainWindow):\n\t\"\"\"docstring for """ + self.appinfos.get_mainappname() + """.\"\"\"\n\tdef __init__(self, parent=None):\n\t\tsuper(""" + self.appinfos.get_mainappname() + """, self).__init__()\n\t\tself.title        = """ + self.appinfos.get_mainappname() + """Infos.get_name() + " - " + """ + self.appinfos.get_mainappname() + """Infos.get_version_tag()\n\t\tself.margin_left  = 200\n\t\tself.margin_top   = 200\n\t\tself.width        = 800\n\t\tself.height       = 600\n\t\tself._initUI()\n\n"""
         appclass += _classInit
 
         #_initUI
-        _initUI = """\tdef _initUI(self):\n\t\tself.setWindowTitle(self.title)\n\t\t#self.setWindowIcon(QIcon('lib/meta/ico.png'))\n\t\tself.setGeometry(self.margsin_left, self.margin_top, self.width, self.height)\n\t\tself.setFixedSize(self.size())\n\t\tself.setAttribute(Qt.WA_DeleteOnClose)\n\t\tself._initMenus()\n\t\tself.show()\n\n"""
+        _initUI = """\tdef _initUI(self):\n\t\tself.setWindowTitle(self.title)\n\t\t#self.setWindowIcon(QIcon('lib/meta/ico.png'))\n\t\tself.setGeometry(self.margin_left, self.margin_top, self.width, self.height)\n\t\tself.setFixedSize(self.size())\n\t\tself.setAttribute(Qt.WA_DeleteOnClose)\n\t\tself._initMenus()\n\t\tself.show()\n\n"""
         appclass += _initUI
 
         #_initMenus
@@ -95,9 +95,18 @@ class PyqtBaseAppGenerator(object):
             _initMenus += """\t\t""" + actionbutton.replace(" ", "").lower() + """Button = QAction(\'""" + actionbutton + """\', self)\n"""
             _initMenus += """\t\t""" + actionbutton.replace(" ", "").lower() + """Button.triggered.connect(self.start_""" + actionbutton.replace(" ", "").lower() + """Window)\n"""
             _initMenus += """\t\tmenu""" + self.appinfos.menus[0][0] + """.addAction(""" + actionbutton.replace(" ", "").lower() + """Button)\n"""
-            _windowsHandlers += """    def start_""" + actionbutton.replace(" ", "").lower() + """Window(self):\n\t\tself.w""" + actionbutton.replace(" ", "").lower() + """Window = """ + actionbutton.replace(" ", "").lower() + """Window()\n\t\tself.w""" + actionbutton.replace(" ", "").lower() + """Window.show()\n\n"""
+            _windowsHandlers += """\tdef start_""" + actionbutton.replace(" ", "").lower() + """Window(self):\n\t\tself.w""" + actionbutton.replace(" ", "").lower() + """Window = """ + actionbutton.replace(" ", "").lower() + """Window()\n\t\tself.w""" + actionbutton.replace(" ", "").lower() + """Window.show()\n\n"""
+        _initMenus += """\t\tmenu""" + self.appinfos.menus[0][0] + """.addSeparator()\n\t\texitButton = QAction('Exit', self)\n\t\texitButton.setShortcut('Ctrl+Q')\n\t\texitButton.setStatusTip('Exit application')\n\t\texitButton.triggered.connect(self.close)\n\t\tmenu""" + self.appinfos.menus[0][0] + """.addAction(exitButton)\n\n"""
 
-        _initMenus += """\t\texitButton = QAction('Exit', self)\n\t\texitButton.setShortcut('Ctrl+Q')\n\t\texitButton.setStatusTip('Exit application')\n\t\texitButton.triggered.connect(self.close)\n\t\tmenu""" + self.appinfos.menus[0][0] + """.addAction(exitButton)\n\n"""
+        for menu in self.appinfos.menus[1:]:
+            for submenu in menu[1]:
+                self._genWindow(submenu.replace(" ", "").lower())
+                _initMenus += """\t\t""" + submenu.replace(" ", "").lower() + """Button = QAction(\'""" + actionbutton + """\', self)\n"""
+                _initMenus += """\t\t""" + submenu.replace(" ", "").lower() + """Button.triggered.connect(self.start_""" + submenu.replace(" ", "").lower() + """Window)\n"""
+                _initMenus += """\t\tmenu""" + menu[0] + """.addAction(""" + submenu.replace(" ", "").lower() + """Button)\n"""
+                _windowsHandlers += """\tdef start_""" + submenu.replace(" ", "").lower() + """Window(self):\n\t\tself.w""" + submenu.replace(" ", "").lower() + """Window = """ + submenu.replace(" ", "").lower() + """Window()\n\t\tself.w""" + submenu.replace(" ", "").lower() + """Window.show()\n\n"""
+            _initMenus += """\n"""
+
         appclass += _initMenus
         appclass += _windowsHandlers
 
@@ -116,8 +125,8 @@ class PyqtBaseAppGenerator(object):
 
         _windowData = self.appinfos.gen_header(windowname) + "\n"
 
-        _windowData += """class """ + windowname + """(QWidget):\n\tdef __init__(self, parent=None):\n\tsuper(AboutWindow, self).__init__()\n\t\tself.title = '""" + windowname + """'\n\t\tself.marginleft = 0\n\t\tself.margintop  = 0\n\t\tself.width      = 300\n\t\tself.height     = 200\n\t\tself._initUI()\n\t\tself.show()\n\n"""
-        _windowData += """\tdef _initUI(self):\n\t\tself.setWindowTitle(self.title)\n\t\tself.setAttribute(Qt.WA_DeleteOnClose)  #Kill application on close\n\t\tself.setGeometry(self.marginleft, self.margintop, self.width, self.height)\n\t\tself.label = QLabel("<b>" + PyChatInfos.get_name() + " " + PyChatInfos.get_version() + " </b><br><br>" + PyChatInfos.get_credits(), self)\n\t\tself.label.setAlignment(Qt.AlignCenter)\n\t\tself.layout = QGridLayout()\n\t\tself.layout.addWidget(self.label, 0, 0)\n\t\tself.setLayout(self.layout)\n\n"""
+        _windowData += """class """ + windowname + """(QWidget):\n\tdef __init__(self, parent=None):\n\t\tsuper(""" + windowname + """, self).__init__()\n\t\tself.title = '""" + windowname + """'\n\t\tself.marginleft = 0\n\t\tself.margintop  = 0\n\t\tself.width      = 300\n\t\tself.height     = 200\n\t\tself._initUI()\n\t\tself.show()\n\n"""
+        _windowData += """\tdef _initUI(self):\n\t\tself.setWindowTitle(self.title)\n\t\tself.setAttribute(Qt.WA_DeleteOnClose)  #Kill application on close\n\t\tself.setGeometry(self.marginleft, self.margintop, self.width, self.height)\n\t\tself.label = QLabel("<b>" + """ + self.appinfos.get_mainappname() + """Infos.get_name() + " " + """ + self.appinfos.get_mainappname() + """Infos.get_version() + " </b><br><br>" + """ + self.appinfos.get_mainappname() + """Infos.get_credits(), self)\n\t\tself.label.setAlignment(Qt.AlignCenter)\n\t\tself.layout = QGridLayout()\n\t\tself.layout.addWidget(self.label, 0, 0)\n\t\tself.setLayout(self.layout)\n\n"""
         _windowData += """\n\nif __name__ == '__main__':\n\tapp = QApplication(sys.argv)\n\tex = """ + windowname + """()\n\tsys.exit(app.exec_())\n"""
 
         f = open(self.path + "/lib/ui/windows/" + windowname + ".py", 'w')
